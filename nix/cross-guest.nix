@@ -42,7 +42,6 @@ pkgs.runCommand "mesa-helios-msvc-cross-${architecture}-${configuration}"
     env.PYTHONDONTWRITEBYTECODE = "1";
   }
   ''
-    python3 ${sources.helios}/tools/sync-metadata.py --check
     cp -R ${sources.mesa-helios} source
     chmod -R u+w source
     cp -R ${headers}/DirectX-Headers-1.0 source/subprojects/
@@ -52,10 +51,10 @@ pkgs.runCommand "mesa-helios-msvc-cross-${architecture}-${configuration}"
     meson setup mesa source --wrap-mode=nodownload \
       --cross-file ${dependencies.msvcCrossFile} \
       --buildtype ${if configuration == "debug" then "debug" else "debugoptimized"} \
-      -Db_vscrt=mt '-Dc_args=/FI${sources.helios}/icd/win-build/helios_win_compat.h /FI${./lexer-compat.h} /Z7' \
-      '-Dcpp_args=/FI${sources.helios}/icd/win-build/helios_win_compat.h /FI${./lexer-compat.h} /Z7' \
+      -Db_vscrt=mt '-Dc_args=/FI${./helios_win_compat.h} /FI${./lexer-compat.h} /Z7' \
+      '-Dcpp_args=/FI${./helios_win_compat.h} /FI${./lexer-compat.h} /Z7' \
       -Dvulkan-drivers=virtio -Dgallium-drivers=zink -Dplatforms=windows \
-      -Dhelios-wdk-include=${sources.helios}/icd/win-build/wdk-include \
+      -Dhelios-wdk-include=${./wdk-include} \
       -Dvulkan-manifest-per-architecture=false -Dvideo-codecs= -Dvulkan-layers= \
       -Degl=disabled -Dgbm=disabled -Dglx=disabled -Dopengl=true \
       -Dgles1=disabled -Dgles2=disabled -Dllvm=disabled -Dshader-cache=disabled \
@@ -86,7 +85,7 @@ pkgs.runCommand "mesa-helios-msvc-cross-${architecture}-${configuration}"
       '')
       [
         "mesa-helios"
-        "helios"
+
       ]
     }
     cp mesa/compile_commands.json "$out/share/winboat/compile_commands.json"
