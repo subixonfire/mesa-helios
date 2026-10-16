@@ -2,7 +2,6 @@ param([Parameter(Mandatory)][string]$Specification)
 . (Join-Path $env:WINBOAT_CONTROL_ROOT 'Control.ps1')
 $spec = Read-ControlJson $Specification
 $mesa = Join-Path $spec.sourceRoot $spec.sources.'mesa-helios'.relativePath
-$helios = Join-Path $spec.sourceRoot $spec.sources.helios.relativePath
 $protocol = Join-Path $spec.sourceRoot $spec.sources.'venus-protocol'.relativePath
 $utilities = @($spec.prerequisites | Where-Object kind -eq 'utilities')
 $headersInput = @($spec.prerequisites | Where-Object kind -eq 'mesa')
@@ -10,8 +9,6 @@ if ($utilities.Count -ne 1 -or $headersInput.Count -ne 1) { throw 'Verified Wind
 $env:PYTHONPATH = Join-Path $utilities[0].root 'python'
 $env:PATH = (Join-Path $utilities[0].root 'bin') + ';' + $env:PATH
 & python.exe -c 'import mako, yaml, packaging; print(mako.__version__, yaml.__version__, packaging.__version__)'
-if ($LASTEXITCODE) { exit $LASTEXITCODE }
-& python.exe (Join-Path $helios 'tools\sync-metadata.py') --check
 if ($LASTEXITCODE) { exit $LASTEXITCODE }
 # Patch only this operation's build copy; retain the verified source mirror and
 # every generated driver header in the returned artifact table.
@@ -32,10 +29,10 @@ try {
 } finally { Pop-Location }
 Copy-Item (Join-Path $headers '*.h') (Join-Path $source 'src\virtio\venus-protocol') -Force
 $nativeName = if ($spec.architecture -eq 'x86') {'clang-cl-x86-native.ini'} else {'clang-cl-native.ini'}
-$native = Join-Path $helios "ci\windows\$nativeName"
+$native = Join-Path $mesa "nix\$nativeName"
 $build = Join-Path $spec.buildRoot 'mesa'
-$compat = Join-Path $helios 'icd\win-build\helios_win_compat.h'
-$wdk = Join-Path $helios 'icd\win-build\wdk-include'
+$compat = Join-Path $mesa 'nix\helios_win_compat.h'
+$wdk = Join-Path $mesa 'nix\wdk-include'
 $type = if ($spec.configuration -eq 'debug') {'debug'} else {'debugoptimized'}
 & meson.exe setup $build $source --native-file $native --wrap-mode=nodownload --buildtype=$type -Db_vscrt=mt `
     "-Dc_args=/FI$compat /Z7" "-Dcpp_args=/FI$compat /D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH /Z7" `
