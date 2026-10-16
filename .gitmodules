@@ -1,0 +1,3 @@
+[submodule "venus-protocol"]
+	path = subprojects/venus-protocol
+	url = https://github.com/winboat-org/venus-protocol.git
