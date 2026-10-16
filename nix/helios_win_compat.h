@@ -1,12 +1,11 @@
 /*
- * helios_win_compat.h — Helios out-of-tree compat shim for building Mesa's
+ * helios_win_compat.h — Mesa Windows backend compatibility shim for building Mesa's
  * `venus` Vulkan driver on Windows.
  *
  * This header is FORCE-INCLUDED into every Mesa translation unit via the meson
  * `c_args`/`cpp_args` flag (`-include` for gcc/clang, `/FI` for cl/clang-cl). It
- * carries shared WinBoat branding from metadata/helios.env as well as compiler
- * compatibility definitions. Mesa itself is the icd/mesa fork; its Helios
- * backend and Windows support are maintained there.
+ * carries the Windows backend branding and compiler compatibility definitions.
+ * These headers are owned by this Mesa fork.
  *
  * The `__ASSEMBLER__` guard matters: meson force-includes this onto .S files too
  * (e.g. blake3 SIMD), where it must be completely inert.
@@ -16,7 +15,7 @@
 
 #if defined(_WIN32) && !defined(__ASSEMBLER__)
 
-#include "../../metadata/helios_branding.h"
+#include "helios_branding.h"
 
 /* (1) pid_t — venus vn_common.h uses it as the return type of vn_gettid()
  *     (which already has a DETECT_OS_WINDOWS arm returning GetCurrentThreadId()).

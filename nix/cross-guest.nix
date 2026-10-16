@@ -51,8 +51,8 @@ pkgs.runCommand "mesa-helios-msvc-cross-${architecture}-${configuration}"
     meson setup mesa source --wrap-mode=nodownload \
       --cross-file ${dependencies.msvcCrossFile} \
       --buildtype ${if configuration == "debug" then "debug" else "debugoptimized"} \
-      -Db_vscrt=mt '-Dc_args=/FI${./helios_win_compat.h} /FI${./lexer-compat.h} /Z7' \
-      '-Dcpp_args=/FI${./helios_win_compat.h} /FI${./lexer-compat.h} /Z7' \
+      -Db_vscrt=mt '-Dc_args=/FI${./.}/helios_win_compat.h /FI${./lexer-compat.h} /Z7' \
+      '-Dcpp_args=/FI${./.}/helios_win_compat.h /FI${./lexer-compat.h} /Z7' \
       -Dvulkan-drivers=virtio -Dgallium-drivers=zink -Dplatforms=windows \
       -Dhelios-wdk-include=${./wdk-include} \
       -Dvulkan-manifest-per-architecture=false -Dvideo-codecs= -Dvulkan-layers= \
@@ -85,7 +85,6 @@ pkgs.runCommand "mesa-helios-msvc-cross-${architecture}-${configuration}"
       '')
       [
         "mesa-helios"
-
       ]
     }
     cp mesa/compile_commands.json "$out/share/winboat/compile_commands.json"
