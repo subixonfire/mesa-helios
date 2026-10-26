@@ -1128,6 +1128,19 @@ vn_physical_device_init_external_memory(
    }
 
 #if DETECT_OS_WINDOWS
+   /* pve-windows-gpu-research (Helios D3): with HELIOS_VN_OPAQUE_FD_EXPORTS=1
+    * the renderer exports OPAQUE_FD only, as on hosts without dma_buf export:
+    * the host hands the DWM primary to its display listener as Vulkan
+    * OPAQUE_FD memory (CUDA cuImportExternalMemory, no copy). Needs a
+    * virglrenderer that attaches opaque resources across contexts. */
+   if (opaque_fd_exportable) {
+      const char *opaque = os_get_option("HELIOS_VN_OPAQUE_FD_EXPORTS");
+      if (opaque && opaque[0] == '1') {
+         physical_dev->external_memory.renderer_handle_type =
+            VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+         physical_dev->external_memory.helios_opaque_fd_exports = true;
+      }
+   }
    /* WSI/scanout prefers DMA_BUF, but native OPAQUE_WIN32 memory needs the
     * opaque object-identity semantics that also work for optimal-tiled images.
     * Keep the contracts separate and fall back only when OPAQUE_FD is absent. */

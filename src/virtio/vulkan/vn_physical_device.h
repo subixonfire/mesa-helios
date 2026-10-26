@@ -123,6 +123,10 @@ struct vn_physical_device {
        * renderer_handle_type, which may be DMA_BUF for WSI. */
       VkExternalMemoryHandleTypeFlagBits win32_renderer_handle_type;
       VkExternalMemoryHandleTypeFlags supported_handle_types;
+      /* pve-windows-gpu-research: HELIOS_VN_OPAQUE_FD_EXPORTS=1 makes every
+       * renderer export an OPAQUE_FD, explicit DMA_BUF requests included, so
+       * a host listener can import the scan-out primary with CUDA. */
+      bool helios_opaque_fd_exports;
    } external_memory;
 
    struct {
@@ -168,6 +172,8 @@ vn_preserve_explicit_dmabuf_handle_types(
    const VkExternalMemoryHandleTypeFlags handle_types)
 {
 #if DETECT_OS_WINDOWS
+   if (physical_dev->external_memory.helios_opaque_fd_exports)
+      return false;
    return handle_types == VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT &&
           (physical_dev->external_memory.supported_handle_types &
            VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT);
