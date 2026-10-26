@@ -16,6 +16,8 @@ on:
         required: true
         type: choice
         options: [release, debug]
+env:
+  WB_REPO_ORGS: '{"helios":"subixonfire","winboat-devenv":"subixonfire","mesa-helios":"subixonfire"}'
 permissions:
   contents: read
   actions: read
@@ -24,8 +26,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build:
-    if: github.repository == 'winboat-org/mesa-helios'
-    environment: component-build
+    if: github.repository == 'subixonfire/mesa-helios'
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     strategy:
@@ -43,8 +44,8 @@ jobs:
         run: |
           root_revision="$SELECTED_ROOT"
           if [[ -z "$root_revision" ]]; then
-            root_branch=$(gh api repos/winboat-org/winboat-devenv --jq .default_branch)
-            root_revision=$(gh api "repos/winboat-org/winboat-devenv/commits/$root_branch" --jq .sha)
+            root_branch=$(gh api repos/subixonfire/winboat-devenv --jq .default_branch)
+            root_revision=$(gh api "repos/subixonfire/winboat-devenv/commits/$root_branch" --jq .sha)
           fi
           component_revision="${SELECTED_COMPONENT:-$GITHUB_SHA}"
           configuration="${SELECTED_CONFIGURATION:-release}"
@@ -57,12 +58,25 @@ jobs:
       - name: Checkout the exact root operation and installer source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, node24
         with:
-          repository: winboat-org/winboat-devenv
+          repository: subixonfire/winboat-devenv
           ref: ${{ steps.identity.outputs.root_revision }}
           path: workspace
           persist-credentials: false
           submodules: false
           token: ${{ secrets.COMPONENT_INPUTS_TOKEN || github.token }}
+      - name: Free runner disk space
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/share/boost /usr/share/swift
+          sudo docker image prune --all --force >/dev/null || true
+          df -h /
+      - name: Authenticate git for the private subixonfire repositories
+        shell: bash
+        env:
+          TOKEN: ${{ secrets.COMPONENT_INPUTS_TOKEN }}
+        run: |
+          test -n "$TOKEN" || { echo "secret COMPONENT_INPUTS_TOKEN is missing"; exit 1; }
+          git config --global url."https://x-access-token:${TOKEN}@github.com/subixonfire/".insteadOf "https://github.com/subixonfire/"
       - name: Install Nix
         uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2, composite
         with:
