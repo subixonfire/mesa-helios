@@ -1878,12 +1878,31 @@ vn_physical_device_init(struct vn_physical_device *physical_dev)
       physical_dev->renderer_driver_id == VK_DRIVER_ID_NVIDIA_PROPRIETARY &&
       physical_dev->external_memory.win32_renderer_handle_type ==
          VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+   /* pve-windows-gpu-research (WP4, G-W4-0): an OPAQUE_FD mapping export
+    * can't be mapped by a vhost-user-gpu worker's frontend (another process
+    * maps the blob's fd; an NVIDIA OPAQUE_FD isn't mmap-able). The host's
+    * default DMA_BUF export can, and on NVIDIA 580.178.04 its mmap matches
+    * vkMapMemory (CPU both ways and a GPU fill, types 8/9). So the internal
+    * export is kept only from NVIDIA 600 on, where the 615.71.09 control
+    * above saw different bytes. HELIOS_VN_CPU_MAP=opaque|dmabuf overrides.
+    * Explicit exports keep their contracts either way. */
+   if (physical_dev->external_memory.opaque_fd_mapping) {
+      const char *cpu_map = os_get_option("HELIOS_VN_CPU_MAP");
+      const uint32_t nv_major = physical_dev->renderer_driver_version >> 22;
+
+      if (cpu_map && !strcmp(cpu_map, "dmabuf"))
+         physical_dev->external_memory.opaque_fd_mapping = false;
+      else if (!cpu_map || strcmp(cpu_map, "opaque"))
+         physical_dev->external_memory.opaque_fd_mapping = nv_major >= 600;
+   }
    if (VN_DEBUG(INIT)) {
       vn_log(instance,
              "cpu_mapping_policy opaque_fd=%u renderer_driver=%u "
-             "guest_vram=%u default_handle=0x%x win32_handle=0x%x",
+             "renderer_driver_version=0x%x guest_vram=%u default_handle=0x%x "
+             "win32_handle=0x%x",
              physical_dev->external_memory.opaque_fd_mapping,
              physical_dev->renderer_driver_id,
+             physical_dev->renderer_driver_version,
              instance->renderer->info.has_guest_vram,
              physical_dev->external_memory.renderer_handle_type,
              physical_dev->external_memory.win32_renderer_handle_type);
